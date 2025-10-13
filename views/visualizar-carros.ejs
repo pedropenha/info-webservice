@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/css/style.css">
+    <title>Visualizar Carros</title>
+</head>
+<body>
+    <h1>Lista de Carros</h1>
+
+    <div class="carros-container">
+        <% carros.forEach(carro => { %>
+            <div class="carro-card">
+                <h3>Modelo: <%= carro.modelo %></h3>
+                <p>Ano: <%= carro.ano %></p>
+                <p>Placa: <%= carro.placa %></p>
+                <p class="preco">R$ <%= carro.preco %></p>
+            </div>
+        <% }); %>
+    </div>
+</body>
+</html>
