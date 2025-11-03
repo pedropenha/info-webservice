@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors';
 import path from 'path'
 import __dirname from './utils/pathUtils.js';
 import dotenv from 'dotenv';
@@ -32,8 +33,7 @@ app.use(securityMiddleware);
 app.use(compressionMiddlewware);
 //app.use(rateLimitMiddleware);
 app.use(morganMiddleware);
-
-//Registrando rotas (endpoints)
+app.use(cors());
 app.use(router);
 
 app.listen(port, () => {

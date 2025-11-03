@@ -1,3 +1,4 @@
+// Schemas/CursoSchema.js
 import mongoose from 'mongoose';
 
 const CursoSchema = new mongoose.Schema(
@@ -14,14 +15,16 @@ const CursoSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        instrutores: {
+        instrutores: { 
             type: String,
             required: true,
         },
+        
         preRequisitos: {
-            type: String,
+            type: String, 
             required: true,
         },
+        
         local: {
             type: String,
             required: true,
@@ -54,5 +57,4 @@ const CursoSchema = new mongoose.Schema(
 );
 
 const CursoModel = mongoose.model('Curso', CursoSchema);
-
 export default CursoModel;

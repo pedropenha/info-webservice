@@ -10,6 +10,9 @@ import morgan from 'morgan';
 //Middlewares
 const staticMiddleware = express.static(path.join(__dirname, 'assets'));
 
+const logDirectory = path.join(__dirname, 'logs');
+const logFilePath = path.join(logDirectory, 'access.log');
+
 const urlencodedMiddleware = express.urlencoded({ extended: true});
 const jsonMiddleware = express.json();
 
@@ -23,8 +26,12 @@ const rateLimitMiddleware = rateLimit({
     message: 'Muitas requisições, tente novamente em 10 minutos.'
 });
 
-const logFile = fs.createWriteStream(path.join(__dirname, 'access.log'), {flags:'a'});
-const morganMiddleware = morgan('combined', { stream: logFile});
+if (!fs.existsSync(logDirectory)) {
+    fs.mkdirSync(logDirectory, { recursive: true });
+}
+
+const logFile = fs.createWriteStream(logFilePath, { flags: 'a' });
+const morganMiddleware = morgan('combined', { stream: logFile });
 
 export {
     staticMiddleware,
