@@ -21,6 +21,14 @@ const UserSchema = new mongoose.Schema(
         nivel: {
             type: String,
             required: true,
+        },
+        foto: {
+            type: String,
+            default: null
+        },
+        proficiencias: {
+            type: [String],
+            default: []
         }
     },
     {

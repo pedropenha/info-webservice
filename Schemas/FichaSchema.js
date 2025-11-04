@@ -3,10 +3,11 @@ import mongoose from 'mongoose';
 const FichaSchema = new mongoose.Schema(
     {
         usuario: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
         },
-        proeficiencias: {
+        proficiencias: {
             type: Array,
             required: true,
         }

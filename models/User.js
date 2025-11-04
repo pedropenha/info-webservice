@@ -64,7 +64,7 @@ class User{
             nivel: this.nivel
         })
 
-        return await novoUser.save;
+        return await novoUser.save();
     }
 
     static async findAll(){
@@ -83,10 +83,12 @@ class User{
         return await UserModel.findByIdAndDelete(id);
     }
 
-    static async update(id){
-        return await UserModel.findOneAndUpdate({ _id: id }, {
-            $set: { nome: this.nome, email: this.email, nivel: this.nivel }
-        }, { new: true });
+    static async update(id, updateData){
+        return await UserModel.findOneAndUpdate(
+            { _id: id }, 
+            { $set: updateData }, 
+            { new: true }
+        );
     }
 }
 
