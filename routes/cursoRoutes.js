@@ -1,24 +1,23 @@
-// /routes/cursoRoutes.js
 import express from 'express';
 import CursoController from '../controllers/CursoController.js';
 
 const router = express.Router();
 
-// Rotas da API RESTful para o recurso /cursos
-
-// GET /api/cursos - Listagem, Busca e Filtro
+// GET /api/cursos - Listagem de cursos com filtros
 router.get('/', CursoController.getAllCursos); 
 
-// POST /api/cursos - Criação
-router.post('/', CursoController.createCurso);
+router.get('/tags', CursoController.getDistinctTags);
 
-// GET /api/cursos/:id - Busca por ID
+// GET /api/cursos/:id - Busca detalhes do curso por ID
 router.get('/:id', CursoController.getCursoById);
 
-// PUT /api/cursos/:id - Atualização
-router.put('/:id', CursoController.updateCurso); 
+// POST /api/cursos - Criação de um novo curso
+router.post('/', CursoController.createCurso);
 
-// DELETE /api/cursos/:id - Deleção
+// PUT /api/cursos/:id - Atualização de curso
+router.put('/:id', CursoController.updateCurso);
+
+// DELETE /api/cursos/:id - Deleção de curso
 router.delete('/:id', CursoController.deleteCurso);
 
 export default router;

@@ -25,6 +25,9 @@ Database.connect();
 app.set('views', path.join(__dirname, 'views')); //Definindo a pasta do template EJS
 app.set('view engine', 'ejs'); //Definindo o motor de template EJS
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 //Registrando Middlewares
 app.use(staticMiddleware);
 app.use(urlencodedMiddleware);

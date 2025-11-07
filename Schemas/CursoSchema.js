@@ -49,9 +49,9 @@ const CursoSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        proeficiencias: {
-            type: String,
-            required: true,
+        proficiencias: {
+            type: [String],
+            default: []
         }
     }
 );
