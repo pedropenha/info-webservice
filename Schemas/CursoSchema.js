@@ -52,6 +52,14 @@ const CursoSchema = new mongoose.Schema(
         proficiencias: {
             type: [String],
             default: []
+        },
+        dataInicio: {
+            type: Date,
+            required: true
+        },
+        dataTermino: {
+            type: Date,
+            required: true
         }
     }
 );

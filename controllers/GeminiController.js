@@ -16,16 +16,15 @@ class GeminiController{
 
     static async gerarDescricaoCurso(req, res){
         try{
-            const { titulo, contexto } = req.body;
+            const { titulo } = req.body ?? {};
+            const contexto = (req.body?.contexto ?? "").trim();
 
-            if(titulo === undefined){
+            if(!titulo){
                 res.status(422).json({ message: "Envie o titulo do curso" });
                 return;
             }
 
-            if(contexto === ""){
-                contexto = "Não enviado";
-            }
+            const contextoNormalizado = contexto === "" ? "Não enviado" : contexto;
 
             const prompt = `Gere uma descrição para o curso com titulo ${titulo},
             a descrição deve ter até 255 caracteres e deve ser retornada em um objeto JSON, em texto normal, SEM MARKDOWN,
@@ -33,7 +32,7 @@ class GeminiController{
             o objeto de retorno deve ter sempre a chave: descricao e o valor é a descrição gerada por você.
             Também posso enviar o contexto, mas caso ele seja 'Não enviado' você deve apenas ignora-lo.
             -----
-            contexto: ${contexto}
+            contexto: ${contextoNormalizado}
             -----`
 
             const response = await callGemini(prompt);
@@ -46,9 +45,9 @@ class GeminiController{
 
     static async gerarProficiencias(req, res){
         try{
-            const { contexto } = req.body;
+            const contexto = (req.body?.contexto ?? "").trim();
 
-            if(contexto === undefined){
+            if(!contexto){
                 res.status(422).send({ message: "Contexto inválido" });
                 return;
             }
@@ -72,32 +71,106 @@ class GeminiController{
 
     static async gerarConteudoProgramatico(req, res){
         try{
-            const { titulo, contexto } = req.body;
+            const { titulo } = req.body ?? {};
+            const contexto = (req.body?.contexto ?? "").trim();
 
-            if(contexto === undefined || contexto === "" ){
+            if(!contexto){
                 res.status(422).send({ message: "Contexto é obrigatório" });
                 return;
             }
 
-            const prompt = `
-                Você deve criar o conteúdo programático do curso ${titulo} o conteúdo programático
-                deve condizer com o tipo do curso e ele deve ter a duração aproximada de cada módulo,
-                considere também o contexto: ${contexto}.
-                O contexto fornecido detalha o que o curso possuirá.
-                O retorno deve ser em um objeto JSON, em texto normal, SEM MARKDOWN,
-                NÃO USE NUNCA emojis, devolva o texto padrão sem emojis.
-                O retorno é neste estilo:
-                "titulo": "Modulo 3: Introdução e Fundamentos de IA para Desenvolvedores Flutter",
-                "duracao_aproximada": "8 horas",
-                "conteudo": [
-                    "Visão geral da Inteligência Artificial e Aprendizado de Máquina: Conceitos, tipos e aplicações em mobile.",
-                    "Tipos de IA aplicáveis a aplicativos móveis: Visão Computacional, Processamento de Linguagem Natural (PLN), Sistemas de Recomendação.",
-                    "Ferramentas e bibliotecas comuns no ecossistema de IA (TensorFlow, ML Kit, APIs de nuvem).",
-                    "Discussão sobre ética, viés e privacidade em sistemas de IA móveis.",
-                    "Introdução à preparação e pré-processamento de dados para modelos de IA.",
-                    "Noções básicas de treinamento de modelos e inferência."
-                ]
-            `;
+            if(!titulo){
+                res.status(422).send({ message: "Titulo é obrigatório" });
+                return;
+            }
+
+            const prompt = `Você deve criar o conteúdo programático do curso "${titulo}".
+O conteúdo programático deve condizer com o tipo do curso.
+Considere o contexto: ${contexto}
+Retorne APENAS um objeto JSON com a chave "conteudo" contendo uma string de texto corrido descrevendo os módulos e tópicos do curso.
+SEM MARKDOWN, SEM emojis, texto formal em português.
+Exemplo: {"conteudo": "Módulo 1: Introdução... Módulo 2: Fundamentos..."}`;
+
+            const response = await callGemini(prompt);
+            res.json(response);
+        }catch(error){
+            console.log("Erro ao chamar o gemini");
+            res.status(500).json({ message: "Erro interno", stacktrace: error });
+        }
+    }
+
+    static async gerarPublicoAlvo(req, res){
+        try{
+            const contexto = (req.body?.contexto ?? "").trim();
+
+            if(!contexto){
+                res.status(422).send({ message: "Contexto inválido" });
+                return;
+            }
+
+            const prompt = `Com base no contexto do curso, defina o público-alvo ideal.
+Retorne APENAS um objeto JSON com a chave "publico" contendo o texto.
+SEM MARKDOWN, SEM emojis, texto formal em português.
+Exemplo: {"publico": "Estudantes de ciência da computação, desenvolvedores iniciantes"}
+            -----
+            contexto: ${contexto}
+            -----`;
+
+            const response = await callGemini(prompt);
+            res.json(response);
+        }catch(error){
+            console.log("Erro ao chamar o gemini");
+            res.status(500).json({ message: "Erro interno", stacktrace: error });
+        }
+    }
+
+    static async gerarPreRequisitos(req, res){
+        try{
+            const contexto = (req.body?.contexto ?? "").trim();
+
+            if(!contexto){
+                res.status(422).send({ message: "Contexto inválido" });
+                return;
+            }
+
+            const prompt = `Com base no contexto do curso, liste os pré-requisitos necessários.
+Retorne APENAS um objeto JSON com a chave "preRequisitos" contendo o texto.
+SEM MARKDOWN, SEM emojis, texto formal em português.
+Se não houver pré-requisitos, retorne "Nenhum".
+            -----
+            contexto: ${contexto}
+            -----`;
+
+            const response = await callGemini(prompt);
+            res.json(response);
+        }catch(error){
+            console.log("Erro ao chamar o gemini");
+            res.status(500).json({ message: "Erro interno", stacktrace: error });
+        }
+    }
+
+    static async gerarResumoAvaliacoes(req, res){
+        try{
+            const { avaliacoes } = req.body;
+
+            if(!avaliacoes || avaliacoes.length === 0){
+                res.status(422).send({ message: "Envie as avaliações para gerar o resumo" });
+                return;
+            }
+
+            // Montar texto com as avaliações
+            const textoAvaliacoes = avaliacoes
+                .filter(av => !av.oculta)
+                .map((av, index) => `Avaliação ${index + 1} (${av.nota} estrelas): ${av.mensagem}`)
+                .join('\n\n');
+
+            const prompt = `Analise as seguintes avaliações de um curso e gere um resumo objetivo e conciso em até 200 palavras.
+            O resumo deve destacar os principais pontos positivos, negativos e o sentimento geral dos alunos.
+            Retorne APENAS um objeto JSON com a chave "resumo" contendo o texto do resumo.
+            SEM MARKDOWN, SEM emojis, apenas texto formal em português.
+            
+            Avaliações:
+            ${textoAvaliacoes}`;
 
             const response = await callGemini(prompt);
             res.json(response);

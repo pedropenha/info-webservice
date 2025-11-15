@@ -152,6 +152,80 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
             res.status(500).json({ message: 'Erro interno ao buscar status.' });
         }
     }
+
+    // GET /api/inscricoes/usuario/:usuarioId - Buscar inscrições do usuário
+    static async buscarInscricoesUsuario(req, res) {
+        try {
+            const { usuarioId } = req.params;
+
+            if (!mongoose.Types.ObjectId.isValid(usuarioId)) {
+                return res.status(400).json({ message: 'ID do usuário inválido.' });
+            }
+
+            const inscricoes = await InscricaoModel.find({ usuarioId: usuarioId })
+                .populate('cursoId')
+                .sort({ dataInscricao: -1 })
+                .lean();
+
+            // Adicionar status do curso (em andamento, concluído, vai iniciar)
+            const hoje = new Date();
+            const inscricoesComStatus = inscricoes.map(inscricao => {
+                if (!inscricao.cursoId) return inscricao;
+
+                const dataInicio = new Date(inscricao.cursoId.dataInicio);
+                const dataTermino = new Date(inscricao.cursoId.dataTermino);
+                
+                let statusCurso = 'desconhecido';
+                
+                if (inscricao.status === 'Concluido') {
+                    statusCurso = 'concluido';
+                } else if (dataTermino < hoje) {
+                    statusCurso = 'concluido';
+                } else if (dataInicio > hoje) {
+                    statusCurso = 'vai_iniciar';
+                } else {
+                    statusCurso = 'em_andamento';
+                }
+
+                return {
+                    ...inscricao,
+                    statusCurso
+                };
+            });
+
+            res.json(inscricoesComStatus);
+
+        } catch (error) {
+            console.error('Erro ao buscar inscrições do usuário:', error);
+            res.status(500).json({ message: 'Erro interno ao buscar inscrições.' });
+        }
+    }
+
+    // PATCH /api/inscricoes/:id/concluir - Marcar curso como concluído
+    static async concluirCurso(req, res) {
+        try {
+            const { id } = req.params;
+
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: 'ID da inscrição inválido.' });
+            }
+
+            const inscricao = await Inscricao.updateStatus(id, 'Concluido');
+
+            if (!inscricao) {
+                return res.status(404).json({ message: 'Inscrição não encontrada.' });
+            }
+
+            res.json({
+                message: 'Curso marcado como concluído com sucesso!',
+                inscricao
+            });
+
+        } catch (error) {
+            console.error('Erro ao concluir curso:', error);
+            res.status(500).json({ message: 'Erro interno ao processar a solicitação.' });
+        }
+    }
 }
 
 export default InscricaoController;

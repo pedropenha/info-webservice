@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import CursoModel from "../Schemas/CursoSchema.js";  // Ajuste conforme necessário
 
 class Curso {
-    constructor(nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias, id = null) {
+    constructor(nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias, dataInicio, dataTermino, id = null) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
@@ -16,6 +16,8 @@ class Curso {
         this.horario = horario;
         this.faixaEtaria = faixaEtaria;
         this.proeficiencias = proeficiencias;
+        this.dataInicio = dataInicio;
+        this.dataTermino = dataTermino;
     }
 
     // Criar novo curso

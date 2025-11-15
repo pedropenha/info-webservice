@@ -14,11 +14,24 @@ async function callGemini(prompt){
             }
         )
     
-        const jsonText = response.text.trim();
+        let jsonText = response.text.trim();
+        
+        // Remove markdown code blocks se existirem
+        jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        
+        // Remove qualquer texto antes do primeiro { e depois do último }
+        const firstBrace = jsonText.indexOf('{');
+        const lastBrace = jsonText.lastIndexOf('}');
+        
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+        }
+        
         return JSON.parse(jsonText);
-        // return jsonText;
     }catch(error){
-        console.error(error);
+        console.error('Erro no callGemini:', error);
+        console.error('Texto recebido:', error.message);
+        throw error;
     }
 }
 
