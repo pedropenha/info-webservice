@@ -7,4 +7,5 @@ router.post('/', GeminiController.callGemini);
 router.post('/descricao', GeminiController.gerarDescricaoCurso);
 router.post('/proficiencias', GeminiController.gerarProficiencias);
 router.post('/conteudo-programatico', GeminiController.gerarConteudoProgramatico);
+router.post('/recomendacoes', GeminiController.gerarRecomendacoesCurso);
 export default router;
