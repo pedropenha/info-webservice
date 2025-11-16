@@ -5,7 +5,7 @@ import userRoutes from './userRoutes.js';
 import inscricaoRoutes from './InscricaoRoutes.js';
 import GeminiRoutes from './GeminiRoutes.js';
 import avaliacaoRoutes from './avaliacaoRoutes.js';
-
+import recomendacaoRoutes from './RecomendacaoRoutes.js';
 
 const router = express.Router();
 
@@ -17,5 +17,5 @@ router.use('/api/inscricoes', inscricaoRoutes);
 router.use('/api/gemini', GeminiRoutes);
 router.use('/api/avaliacoes', avaliacaoRoutes);
 //router.post('/', User.save);
-
+router.use('/api/recomendacoes', recomendacaoRoutes);
 export default router;

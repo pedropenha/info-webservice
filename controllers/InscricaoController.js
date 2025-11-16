@@ -60,22 +60,16 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
     static async criarInscricao(req, res) {
         try {
             const { usuarioId, cursoId, usuarioProficiencias } = req.body;
-            // 🛑 CORREÇÃO NO FLUXO DE BUSCA E VALIDAÇÃO:
-            // 1. Valida se o ID é válido *antes* de tentar buscar no banco.
             if (!cursoId || !mongoose.Types.ObjectId.isValid(cursoId)) {
                  return res.status(400).json({ message: 'ID do curso inválido.' });
             }
 
-            // 2. Busca o curso usando o modelo personalizado (Curso.js)
             const curso = await Curso.findById(cursoId);
 
-            // 3. Verifica se a busca retornou algo
             if (!curso) {
-                // Se o curso não for encontrado (ID válido, mas não existe), retorna 404.
                 return res.status(404).json({ message: 'Curso não encontrado.' });
             }
 
-            // Verificar se o usuário já está inscrito ou na fila
             const inscricaoExistente = await Inscricao.findByUserAndCourse(usuarioId, cursoId);
             if (inscricaoExistente) {
                 return res.status(409).json({ 
@@ -84,7 +78,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 });
             }
 
-            // Checar os pré-requisitos do curso
             const checagem = await InscricaoController.checarPreRequisitos(curso.preRequisitos, usuarioProficiencias);
 
             if (!checagem.status) {
@@ -94,7 +87,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 });
             }
 
-            // Determinar a quantidade de vagas disponíveis
             const maxVagas = parseInt(curso.maximoVagas);
             const vagasOcupadas = await InscricaoModel.countDocuments({ cursoId: cursoId, status: 'Inscrito' });
 
@@ -123,7 +115,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         }
     }
 
-    // GET /api/inscricoes/status/:cursoId/:usuarioId
     static async getStatusInscricao(req, res) {
         try {
             const { cursoId, usuarioId } = req.params;
@@ -150,6 +141,29 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         } catch (error) {
             console.error('Erro ao buscar status de inscrição:', error);
             res.status(500).json({ message: 'Erro interno ao buscar status.' });
+        }
+    }
+
+    static async cancelarInscricao(req, res) {
+        try {
+            const { id } = req.params; 
+            
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: "ID da inscrição inválido." });
+            }
+
+            const inscricaoDeletada = await InscricaoModel.findByIdAndDelete(id);
+
+            if (!inscricaoDeletada) {
+                return res.status(404).json({ message: "Inscrição não encontrada." });
+            }
+            
+            // (Opcional: Adicionar lógica para notificar o próximo da fila de espera, se houver)
+
+            res.status(200).json({ message: "Inscrição cancelada com sucesso." });
+        } catch (error) {
+            console.error('Erro ao cancelar inscrição:', error);
+            res.status(500).json({ message: 'Erro interno ao cancelar inscrição.' });
         }
     }
 

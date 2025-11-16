@@ -11,4 +11,5 @@ router.post('/publico-alvo', GeminiController.gerarPublicoAlvo);
 router.post('/pre-requisitos', GeminiController.gerarPreRequisitos);
 router.post('/resumo-avaliacoes', GeminiController.gerarResumoAvaliacoes);
 
+router.post('/recomendacoes', GeminiController.gerarRecomendacoesCurso);
 export default router;
