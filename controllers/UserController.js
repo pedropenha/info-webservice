@@ -1,4 +1,6 @@
 import User from "../models/User.js";
+import InscricaoModel from "../Schemas/InscricaoSchema.js"; 
+import mongoose from 'mongoose'; 
 
 class UserController{
     static async createUser(req, res){
@@ -94,6 +96,32 @@ class UserController{
         }catch(error){
             console.error('Erro ao deletar usuário', error);
             res.status(500).json({ message: 'Erro interno ao deletar usuário' });
+        }
+    }
+    static async getUserInscricoes(req, res) {
+        try {
+            const { id } = req.params; // ID do Usuário
+
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: "ID de usuário inválido." });
+            }
+
+            // Encontra todas as inscrições do usuário
+            const inscricoes = await InscricaoModel.find({ usuarioId: id })
+                .populate('cursoId'); // <-- A MÁGICA ACONTECE AQUI
+            
+            if (!inscricoes) {
+                return res.status(200).json([]); // Retorna array vazio se não houver
+            }
+
+            // Filtra inscrições onde o cursoId não é nulo (caso tenha sido deletado)
+            const inscricoesValidas = inscricoes.filter(insc => insc.cursoId);
+
+            res.status(200).json(inscricoesValidas);
+
+        } catch (error) {
+            console.error('Erro ao buscar inscrições do usuário:', error);
+            res.status(500).json({ message: 'Erro interno ao buscar inscrições.' });
         }
     }
 }

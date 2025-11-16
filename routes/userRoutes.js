@@ -18,4 +18,5 @@ router.put('/:id', UserController.updateUser);
 // Rota para deletar usuário
 router.delete('/:id', UserController.deleteUser);
 
+router.get('/:id/inscricoes', UserController.getUserInscricoes);
 export default router;
