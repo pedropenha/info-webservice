@@ -1,5 +1,8 @@
 import Avaliacao from "../models/Avaliacao.js";
 import Inscricao from "../models/Inscricao.js";
+import ResumoAvaliacao from "../models/ResumoAvaliacao.js";
+import AvaliacaoModel from "../Schemas/AvaliacaoSchema.js";
+import { gerarResumoAvaliacoes } from "../services/geminiAPI.js";
 import mongoose from 'mongoose';
 
 class AvaliacaoController {
@@ -7,11 +10,14 @@ class AvaliacaoController {
     // POST /api/avaliacoes - Criar avaliação
     static async criarAvaliacao(req, res) {
         try {
-            const { usuarioId, cursoId, nota, mensagem } = req.body;
+            const { usuarioId, cursoId, nota, mensagem, comentario } = req.body;
+
+            // Aceita tanto 'mensagem' quanto 'comentario' para compatibilidade
+            const textoAvaliacao = mensagem || comentario;
 
             // Validações
-            if (!usuarioId || !cursoId || !nota || !mensagem) {
-                return res.status(400).json({ message: 'Todos os campos são obrigatórios.' });
+            if (!usuarioId || !cursoId || !nota) {
+                return res.status(400).json({ message: 'Campos obrigatórios: usuarioId, cursoId e nota.' });
             }
 
             if (!mongoose.Types.ObjectId.isValid(cursoId) || !mongoose.Types.ObjectId.isValid(usuarioId)) {
@@ -45,9 +51,17 @@ class AvaliacaoController {
                 });
             }
 
-            // Criar avaliação
-            const novaAvaliacao = new Avaliacao(usuarioId, cursoId, nota, mensagem);
+            // Criar avaliação (usa textoAvaliacao que pode ser mensagem ou comentario)
+            const novaAvaliacao = new Avaliacao(usuarioId, cursoId, nota, textoAvaliacao || '');
             await novaAvaliacao.save();
+
+            // Gerar resumo automaticamente após criar avaliação
+            try {
+                await AvaliacaoController.gerarResumoIA(cursoId);
+            } catch (error) {
+                console.error('Erro ao gerar resumo de avaliações:', error);
+                // Não bloqueia a criação da avaliação se falhar a geração do resumo
+            }
 
             res.status(201).json({ 
                 message: 'Avaliação criada com sucesso!',
@@ -69,13 +83,24 @@ class AvaliacaoController {
                 return res.status(400).json({ message: 'ID do curso inválido.' });
             }
 
+            // Buscar resumo em cache
+            const resumoCache = await ResumoAvaliacao.findByCurso(cursoId);
+
+            // Buscar avaliações individuais
             const avaliacoes = await Avaliacao.findByCourse(cursoId);
             const { media, total } = await Avaliacao.getMediaByCourse(cursoId);
 
             res.json({
                 avaliacoes,
                 media,
-                total
+                total,
+                resumo: resumoCache ? {
+                    texto: resumoCache.resumoIA,
+                    totalAvaliacoes: resumoCache.totalAvaliacoes,
+                    mediaNotas: resumoCache.mediaNotas,
+                    distribuicaoNotas: resumoCache.distribuicaoNotas,
+                    ultimaAtualizacao: resumoCache.ultimaAtualizacao
+                } : null
             });
 
         } catch (error) {
@@ -128,8 +153,53 @@ class AvaliacaoController {
             });
 
         } catch (error) {
-            console.error('Erro ao ocultar/mostrar avaliação:', error);
-            res.status(500).json({ message: 'Erro interno ao processar a solicitação.' });
+            console.error('Erro ao ocultar avaliação:', error);
+            res.status(500).json({ message: 'Erro ao ocultar avaliação.', error: error.message });
+        }
+    }
+
+    static async gerarResumoIA(cursoId) {
+        try {
+            // Buscar todas as avaliações do curso (não ocultas)
+            const avaliacoes = await Avaliacao.findByCourse(cursoId);
+
+            if (!avaliacoes || avaliacoes.length === 0) {
+                // Se não há avaliações, remove o resumo se existir
+                await ResumoAvaliacao.delete(cursoId);
+                return;
+            }
+
+            // Calcular estatísticas
+            const totalAvaliacoes = avaliacoes.length;
+            const somaNotas = avaliacoes.reduce((sum, av) => sum + av.nota, 0);
+            const mediaNotas = somaNotas / totalAvaliacoes;
+
+            // Calcular distribuição de notas
+            const distribuicaoNotas = {
+                nota1: avaliacoes.filter(av => av.nota === 1).length,
+                nota2: avaliacoes.filter(av => av.nota === 2).length,
+                nota3: avaliacoes.filter(av => av.nota === 3).length,
+                nota4: avaliacoes.filter(av => av.nota === 4).length,
+                nota5: avaliacoes.filter(av => av.nota === 5).length
+            };
+
+            // Gerar resumo usando IA
+            const resumoIA = await gerarResumoAvaliacoes(avaliacoes);
+
+            // Salvar ou atualizar resumo
+            const resumo = new ResumoAvaliacao(
+                cursoId,
+                resumoIA,
+                totalAvaliacoes,
+                mediaNotas,
+                distribuicaoNotas
+            );
+            await resumo.save();
+
+            console.log(`Resumo de avaliações gerado para curso ${cursoId}`);
+        } catch (error) {
+            console.error('Erro ao gerar resumo de avaliações:', error);
+            throw error;
         }
     }
 }

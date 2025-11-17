@@ -70,6 +70,28 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 return res.status(404).json({ message: 'Curso não encontrado.' });
             }
 
+            // Validar se o curso está concluído
+            if (curso.concluido) {
+                return res.status(400).json({ 
+                    message: 'Este curso já foi concluído. Inscrições não são mais aceitas.',
+                    status: 'CursoConcluido' 
+                });
+            }
+
+            // Validar se as inscrições estão encerradas (data de início é hoje ou passou)
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            const dataInicio = new Date(curso.dataInicio);
+            dataInicio.setHours(0, 0, 0, 0);
+            
+            if (hoje >= dataInicio) {
+                return res.status(400).json({ 
+                    message: 'As inscrições para este curso foram encerradas.',
+                    status: 'InscricoesEncerradas' 
+                });
+            }
+
             const inscricaoExistente = await Inscricao.findByUserAndCourse(usuarioId, cursoId);
             if (inscricaoExistente) {
                 return res.status(409).json({ 
@@ -78,14 +100,15 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 });
             }
 
-            const checagem = await InscricaoController.checarPreRequisitos(curso.preRequisitos, usuarioProficiencias);
-
-            if (!checagem.status) {
-                return res.status(400).json({ 
-                    message: `Falha nos pré-requisitos: ${checagem.mensagem}.`,
-                    status: 'PreRequisitoFaltando' 
-                });
-            }
+            // REMOVIDO: Validação de pré-requisitos - alunos podem se inscrever mesmo sem as proficiências necessárias
+            // As proficiências serão adicionadas ao perfil do aluno ao concluir o curso
+            // const checagem = await InscricaoController.checarPreRequisitos(curso.preRequisitos, usuarioProficiencias);
+            // if (!checagem.status) {
+            //     return res.status(400).json({ 
+            //         message: `Falha nos pré-requisitos: ${checagem.mensagem}.`,
+            //         status: 'PreRequisitoFaltando' 
+            //     });
+            // }
 
             const maxVagas = parseInt(curso.maximoVagas);
             const vagasOcupadas = await InscricaoModel.countDocuments({ cursoId: cursoId, status: 'Inscrito' });

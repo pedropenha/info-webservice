@@ -15,10 +15,11 @@ const CursoSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        instrutores: { 
-            type: String,
-            required: true,
-        },
+        instrutores: [{ 
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        }],
         
         preRequisitos: {
             type: String, 
@@ -60,9 +61,30 @@ const CursoSchema = new mongoose.Schema(
         dataTermino: {
             type: Date,
             required: true
+        },
+        concluido: {
+            type: Boolean,
+            default: false
+        },
+        dataConclusao: {
+            type: Date,
+            default: null
+        },
+        status: {
+            type: String,
+            enum: ['Ativo', 'Concluído', 'Cancelado'],
+            default: 'Ativo'
         }
+    },
+    {
+        timestamps: true
     }
 );
+
+// Validação: pelo menos 1 instrutor
+CursoSchema.path('instrutores').validate(function(value) {
+    return value && value.length > 0;
+}, 'Pelo menos um instrutor é obrigatório.');
 
 const CursoModel = mongoose.model('Curso', CursoSchema);
 export default CursoModel;

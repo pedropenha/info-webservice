@@ -20,4 +20,7 @@ router.put('/:id', CursoController.updateCurso);
 // DELETE /api/cursos/:id - Deleção de curso
 router.delete('/:id', CursoController.deleteCurso);
 
+// PATCH /api/cursos/:id/concluir - Marcar curso como concluído (Admin)
+router.patch('/:id/concluir', CursoController.marcarComoConcluido);
+
 export default router;

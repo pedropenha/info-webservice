@@ -1,9 +1,9 @@
 // controllers/CursoController.js
 import Curso from "../models/Curso.js";
-import CursoModel from "../Schemas/CursoSchema.js";  
-import mongoose from 'mongoose';
-
-class CursoController {
+import CursoModel from "../Schemas/CursoSchema.js";  
+import InscricaoModel from "../Schemas/InscricaoSchema.js";
+import UserController from "./UserController.js";
+import mongoose from 'mongoose';class CursoController {
 
 
 static async getDistinctTags(req, res) {
@@ -31,7 +31,10 @@ static async getDistinctTags(req, res) {
 
 static async getAllCursos(req, res) {
     try {
-        const { busca, proficiencias, local, faixaEtaria, horario, page, limit } = req.query;
+        // Verificar e atualizar cursos expirados automaticamente
+        await CursoController.verificarCursosExpirados();
+        
+        const { busca, proficiencias, local, faixaEtaria, horario, status, page, limit } = req.query;
         const query = {};
 
         const pageInt = parseInt(page) || 1;
@@ -42,7 +45,7 @@ static async getAllCursos(req, res) {
             query.$or = 
             [
                 { nome: { $regex: busca, $options: 'i' } },
-                { instrutores: { $regex: busca, $options: 'i' } }
+                { descricao: { $regex: busca, $options: 'i' } }
             ];
         }
 
@@ -56,6 +59,14 @@ static async getAllCursos(req, res) {
             query.horario = horario;
         }
 
+        // Filtro de status do curso
+        if (status) {
+            query.status = status;
+        } else {
+            // Por padrão, mostrar apenas cursos Ativos (não concluídos/cancelados)
+            query.status = 'Ativo';
+        }
+
         // Filtrando pelos cursos com as proficiencias
         if (proficiencias) {
             // Tags que chegam do Front-end (ex: ['Lógica'])
@@ -67,6 +78,7 @@ static async getAllCursos(req, res) {
          }
 
         const cursos = await CursoModel.find(query)
+            .populate('instrutores', 'nome email foto')
             .skip((pageInt - 1) * limitInt) // Usa Ints corrigidos
             .limit(limitInt) // Usa Ints corrigidos
             .exec();
@@ -97,11 +109,16 @@ static async getCursoById(req, res) {
             return res.status(400).json({ message: "ID do curso inválido." });
         }
 
-        const curso = await Curso.findById(id);
-        if (!curso) {
+        const cursoPopulado = await CursoModel.findById(id)
+            .populate('instrutores', 'nome email foto nivel')
+            .lean();
+        
+        console.log('Curso populado:', JSON.stringify(cursoPopulado, null, 2));
+        
+        if (!cursoPopulado) {
             return res.status(404).json({ message: "Curso não encontrado." });
         }
-        res.status(200).json(curso);
+        res.status(200).json(cursoPopulado);
     } catch (error) {
         console.error('Erro ao buscar curso:', error);
         res.status(500).json({ message: "Erro ao buscar o curso." });
@@ -110,10 +127,25 @@ static async getCursoById(req, res) {
 
 static async createCurso(req, res) {
     try {
-        const { nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias } = req.body;
+        const { nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias, dataInicio, dataTermino } = req.body;
+        
+        // Validar instrutores
+        if (!instrutores || !Array.isArray(instrutores) || instrutores.length === 0) {
+            return res.status(400).json({ message: "Pelo menos um instrutor é obrigatório." });
+        }
+        
+        // Verificar se todos os instrutores existem e são admin ou professor
+        const instrutoresValidos = await mongoose.model('User').find({
+            _id: { $in: instrutores },
+            nivel: { $in: ['admin', 'professor'] }
+        });
+        
+        if (instrutoresValidos.length !== instrutores.length) {
+            return res.status(400).json({ message: "Um ou mais instrutores são inválidos ou não possuem permissão." });
+        }
         
         // 1. Instancia o novo curso
-        const novoCurso = new Curso(nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias);
+        const novoCurso = new Curso(nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias, dataInicio, dataTermino);
         
         // 2. VALIDAÇÃO DE REGRAS DE NEGÓCIO (Vagas)
         const minVagas = parseInt(minimoVagas);
@@ -143,26 +175,52 @@ static async createCurso(req, res) {
 static async updateCurso(req, res) {
     try {
         const { id } = req.params;
-        const camposAtualizados = req.body; 
+        const camposAtualizados = req.body;
         
-        const cursoExistente = await Curso.findById(id);
+        // Validar instrutores se estiverem sendo atualizados
+        if (camposAtualizados.instrutores) {
+            if (!Array.isArray(camposAtualizados.instrutores) || camposAtualizados.instrutores.length === 0) {
+                return res.status(400).json({ message: "Pelo menos um instrutor é obrigatório." });
+            }
+            
+            // Verificar se todos os instrutores existem e são admin ou professor
+            const instrutoresValidos = await mongoose.model('User').find({
+                _id: { $in: camposAtualizados.instrutores },
+                nivel: { $in: ['admin', 'professor'] }
+            });
+            
+            if (instrutoresValidos.length !== camposAtualizados.instrutores.length) {
+                return res.status(400).json({ message: "Um ou mais instrutores são inválidos ou não possuem permissão." });
+            }
+        }
+        
+        // Converter proficiências se vier como string
+        if (camposAtualizados.proeficiencias && typeof camposAtualizados.proeficiencias === 'string') {
+            camposAtualizados.proficiencias = camposAtualizados.proeficiencias
+                .split(',')
+                .map(p => p.trim())
+                .filter(p => p.length > 0);
+            delete camposAtualizados.proeficiencias;
+        }
+        
+        // Atualizar diretamente no modelo
+        const cursoAtualizado = await CursoModel.findByIdAndUpdate(
+            id,
+            camposAtualizados,
+            { new: true, runValidators: true }
+        );
 
-        if (!cursoExistente) {
+        if (!cursoAtualizado) {
             return res.status(404).json({ message: 'Curso não encontrado para atualização' });
         }
-                        
-        Object.keys(camposAtualizados).forEach(key => {
-            if (cursoExistente.hasOwnProperty(key)) {
-                cursoExistente[key] = camposAtualizados[key];
-            }
-        });
-
-        const cursoAtualizado = await cursoExistente.update();
         
         res.json(cursoAtualizado);
 
     } catch (error) {
         console.error('Erro ao atualizar curso', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: 'Dados inválidos no curso.', errors: error.errors });
+        }
         res.status(500).json({ message: 'Erro interno ao atualizar curso' });
     }
 }
@@ -183,6 +241,103 @@ static async deleteCurso(req, res) {
         res.status(500).json({ message: 'Erro interno ao deletar curso' });
     }
 }
+
+// Marcar curso como concluído manualmente (Admin/Professor)
+static async marcarComoConcluido(req, res) {
+    try {
+        const { id } = req.params;
+        
+        const curso = await CursoModel.findByIdAndUpdate(
+            id,
+            { 
+                concluido: true, 
+                dataConclusao: new Date(),
+                status: 'Concluído'
+            },
+            { new: true }
+        );
+        
+        if (!curso) {
+            return res.status(404).json({ message: 'Curso não encontrado' });
+        }
+        
+        // Adicionar proficiências do curso aos alunos inscritos
+        await CursoController.adicionarProficienciasAosAlunos(id, curso.proficiencias);
+        
+        res.json(curso);
+    } catch (error) {
+        console.error('Erro ao marcar curso como concluído', error);
+        res.status(500).json({ message: 'Erro ao marcar curso como concluído' });
+    }
+}
+
+// Verificar e atualizar cursos expirados automaticamente
+static async verificarCursosExpirados() {
+    try {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Começo do dia
+        
+        // Buscar cursos que expiraram
+        const cursosExpirados = await CursoModel.find({
+            dataTermino: { $lt: hoje },
+            concluido: false 
+        });
+        
+        // Atualizar cada curso e adicionar proficiências aos alunos
+        for (const curso of cursosExpirados) {
+            await CursoModel.findByIdAndUpdate(
+                curso._id,
+                { 
+                    concluido: true,
+                    dataConclusao: new Date(),
+                    status: 'Concluído'
+                }
+            );
+            
+            // Adicionar proficiências aos alunos inscritos
+            await CursoController.adicionarProficienciasAosAlunos(curso._id, curso.proficiencias);
+        }
+        
+        if (cursosExpirados.length > 0) {
+            console.log(`${cursosExpirados.length} curso(s) marcado(s) como concluído(s) automaticamente`);
+        }
+    } catch (error) {
+        console.error('Erro ao verificar cursos expirados:', error);
+    }
+}
+
+// Método auxiliar para adicionar proficiências aos alunos inscritos em um curso
+static async adicionarProficienciasAosAlunos(cursoId, proficiencias) {
+    try {
+        if (!proficiencias || proficiencias.length === 0) {
+            return;
+        }
+
+        // Buscar todos os alunos inscritos no curso com status 'Inscrito'
+        const inscricoes = await InscricaoModel.find({ 
+            cursoId: cursoId,
+            status: 'Inscrito' 
+        });
+
+        console.log(`Adicionando proficiências [${proficiencias.join(', ')}] a ${inscricoes.length} aluno(s)`);
+
+        // Adicionar proficiências a cada aluno e atualizar status da inscrição para 'Concluido'
+        for (const inscricao of inscricoes) {
+            await UserController.adicionarProficiencias(inscricao.usuarioId, proficiencias);
+            
+            // Atualizar status da inscrição para 'Concluido'
+            await InscricaoModel.findByIdAndUpdate(
+                inscricao._id,
+                { status: 'Concluido' }
+            );
+        }
+        
+        console.log(`${inscricoes.length} inscrição(ões) marcada(s) como 'Concluido'`);
+    } catch (error) {
+        console.error('Erro ao adicionar proficiências aos alunos:', error);
+    }
+}
+
     
 }
 export default CursoController;

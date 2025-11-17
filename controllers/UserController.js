@@ -1,5 +1,6 @@
 import User from "../models/User.js";
-import InscricaoModel from "../Schemas/InscricaoSchema.js"; 
+import InscricaoModel from "../Schemas/InscricaoSchema.js";
+import AvaliacaoModel from "../Schemas/AvaliacaoSchema.js";
 import mongoose from 'mongoose'; 
 
 class UserController{
@@ -108,7 +109,13 @@ class UserController{
 
             // Encontra todas as inscrições do usuário
             const inscricoes = await InscricaoModel.find({ usuarioId: id })
-                .populate('cursoId'); // <-- A MÁGICA ACONTECE AQUI
+                .populate({
+                    path: 'cursoId',
+                    populate: {
+                        path: 'instrutores',
+                        select: 'nome email foto nivel'
+                    }
+                });
             
             if (!inscricoes) {
                 return res.status(200).json([]); // Retorna array vazio se não houver
@@ -117,11 +124,69 @@ class UserController{
             // Filtra inscrições onde o cursoId não é nulo (caso tenha sido deletado)
             const inscricoesValidas = inscricoes.filter(insc => insc.cursoId);
 
-            res.status(200).json(inscricoesValidas);
+            // Adicionar informações sobre avaliação para cada inscrição
+            const inscricoesComAvaliacao = await Promise.all(
+                inscricoesValidas.map(async (inscricao) => {
+                    const avaliacao = await AvaliacaoModel.findOne({
+                        usuarioId: id,
+                        cursoId: inscricao.cursoId._id
+                    });
+
+                    return {
+                        ...inscricao.toObject(),
+                        avaliacao: avaliacao ? {
+                            nota: avaliacao.nota,
+                            comentario: avaliacao.mensagem,
+                            dataAvaliacao: avaliacao.createdAt
+                        } : null
+                    };
+                })
+            );
+
+            res.status(200).json(inscricoesComAvaliacao);
 
         } catch (error) {
             console.error('Erro ao buscar inscrições do usuário:', error);
             res.status(500).json({ message: 'Erro interno ao buscar inscrições.' });
+        }
+    }
+
+    // Listar professores e admins para seleção em cursos
+    static async listarProfessores(req, res) {
+        try {
+            const professores = await mongoose.model('User').find({
+                nivel: { $in: ['admin', 'professor'] }
+            })
+            .select('nome email foto nivel')
+            .sort({ nome: 1 });
+
+            res.status(200).json(professores);
+        } catch (error) {
+            console.error('Erro ao listar professores:', error);
+            res.status(500).json({ message: 'Erro ao listar professores.' });
+        }
+    }
+
+    // Adicionar proficiências únicas ao perfil do usuário
+    static async adicionarProficiencias(userId, novasProficiencias) {
+        try {
+            if (!novasProficiencias || novasProficiencias.length === 0) {
+                return { success: true, message: 'Nenhuma proficiência para adicionar' };
+            }
+
+            const UserModel = mongoose.model('User');
+            
+            // $addToSet adiciona apenas valores únicos ao array
+            await UserModel.findByIdAndUpdate(
+                userId,
+                { $addToSet: { proficiencias: { $each: novasProficiencias } } },
+                { new: true }
+            );
+
+            return { success: true, message: 'Proficiências adicionadas com sucesso' };
+        } catch (error) {
+            console.error('Erro ao adicionar proficiências:', error);
+            return { success: false, message: 'Erro ao adicionar proficiências', error };
         }
     }
 }

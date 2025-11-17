@@ -3,6 +3,9 @@ import UserController from '../controllers/UserController.js';
 
 const router = express.Router();
 
+// Rota para listar professores e admins
+router.get('/professores', UserController.listarProfessores);
+
 // Rota para buscar todos os usuários
 router.get('/', UserController.getAllUsers);
 
