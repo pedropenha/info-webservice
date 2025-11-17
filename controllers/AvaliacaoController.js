@@ -132,6 +132,13 @@ class AvaliacaoController {
                 return res.status(404).json({ message: 'Avaliação não encontrada.' });
             }
 
+            // Regenerar resumo IA após ocultar/mostrar avaliação
+            try {
+                await AvaliacaoController.gerarResumoIA(avaliacaoAtualizada.cursoId);
+            } catch (error) {
+                console.error('Erro ao regenerar resumo de avaliações:', error);
+            }
+
             res.json({
                 message: oculta ? 'Avaliação ocultada com sucesso.' : 'Avaliação visível novamente.',
                 avaliacao: avaliacaoAtualizada
@@ -145,10 +152,13 @@ class AvaliacaoController {
 
     static async gerarResumoIA(cursoId) {
         try {
-            const avaliacoes = await Avaliacao.findByCourse(cursoId);
+            // Buscar apenas avaliações não ocultas
+            const avaliacoes = await Avaliacao.findByCourse(cursoId, false);
 
+            // Se não houver avaliações visíveis, deletar o resumo
             if (!avaliacoes || avaliacoes.length === 0) {
                 await ResumoAvaliacao.delete(cursoId);
+                console.log(`Resumo deletado para curso ${cursoId} (sem avaliações visíveis)`);
                 return;
             }
 

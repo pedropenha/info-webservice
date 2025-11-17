@@ -57,9 +57,10 @@ class CursoController {
 
             if (status) {
                 query.status = status;
-            } else {
+            } else if (status !== '') {
                 query.status = 'Ativo';
             }
+            // If status === '', don't add any status filter (get all courses)
 
             if (proficiencias) {
                 const tagsRecebidas = proficiencias.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
@@ -305,6 +306,28 @@ class CursoController {
         } catch (error) {
             console.error('Erro ao adicionar proficiências aos alunos:', error);
         }
-    }    
+    }
+
+    static async getCursosByInstrutor(req, res) {
+        try {
+            const { instrutorId } = req.params;
+
+            if (!mongoose.Types.ObjectId.isValid(instrutorId)) {
+                return res.status(400).json({ message: "ID do instrutor inválido." });
+            }
+
+            const cursos = await CursoModel.find({
+                instrutores: instrutorId
+            })
+            .populate('instrutores', 'nome email foto')
+            .sort({ dataInicio: -1 })
+            .lean();
+
+            res.status(200).json(cursos);
+        } catch (error) {
+            console.error('Erro ao buscar cursos do instrutor:', error);
+            res.status(500).json({ message: "Erro ao buscar cursos do instrutor." });
+        }
+    }
 }
 export default CursoController;

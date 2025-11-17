@@ -35,7 +35,12 @@ class RecomendacaoController {
             const inscricoes = await InscricaoModel.find({ usuarioId: userId }).select('cursoId').lean();
             const cursosInscritosIds = inscricoes.map(insc => insc.cursoId.toString());
 
-            const cursosDisponiveis = await CursoModel.find({})
+            const hoje = new Date();
+            const cursosDisponiveis = await CursoModel.find({
+                status: 'Ativo',
+                concluido: false,
+                dataInicio: { $gte: hoje }  // Apenas cursos que ainda vão iniciar
+            })
                 .select('_id nome proficiencias descricao publico preRequisitos') 
                 .limit(50)
                 .lean(); 

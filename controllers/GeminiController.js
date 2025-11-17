@@ -1,4 +1,4 @@
-import callGemini from "../services/geminiAPI.js"
+import { callGemini } from "../services/geminiAPI.js"
 
 
 class GeminiController{

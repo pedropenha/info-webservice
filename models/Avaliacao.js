@@ -32,8 +32,15 @@ class Avaliacao {
     }
 
     
-    static async findByCourse(cursoId) {
-        return await AvaliacaoModel.find({ cursoId: cursoId })
+    static async findByCourse(cursoId, incluirOcultas = true) {
+        const filtro = { cursoId: cursoId };
+        
+        // Se não deve incluir ocultas, filtrar apenas visíveis
+        if (!incluirOcultas) {
+            filtro.oculta = false;
+        }
+        
+        return await AvaliacaoModel.find(filtro)
             .populate('usuarioId', 'nome foto')
             .sort({ createdAt: -1 })
             .lean();
