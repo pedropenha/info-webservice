@@ -1,0 +1,57 @@
+[
+  {
+    "cpf": "12345678901",
+    "nome": "Carlos Eduardo Silva",
+    "email": "carlos.silva@email.com",
+    "senha": "senha123",
+    "nivel": "aluno",
+    "foto": "https://ui-avatars.com/api/?name=Carlos+Silva&background=4e9e47&color=fff&size=200",
+    "proficiencias": ["HTML", "CSS", "JavaScript"],
+    "createdAt": { "$date": "2025-01-15T10:00:00.000Z" },
+    "updatedAt": { "$date": "2025-01-15T10:00:00.000Z" }
+  },
+  {
+    "cpf": "23456789012",
+    "nome": "Ana Paula Santos",
+    "email": "ana.santos@email.com",
+    "senha": "senha123",
+    "nivel": "aluno",
+    "foto": "https://ui-avatars.com/api/?name=Ana+Santos&background=4e9e47&color=fff&size=200",
+    "proficiencias": ["Python", "SQL", "Java"],
+    "createdAt": { "$date": "2025-01-16T11:30:00.000Z" },
+    "updatedAt": { "$date": "2025-01-16T11:30:00.000Z" }
+  },
+  {
+    "cpf": "34567890123",
+    "nome": "Prof. João Martins",
+    "email": "joao.martins@infoeste.edu.br",
+    "senha": "senha123",
+    "nivel": "professor",
+    "foto": "https://ui-avatars.com/api/?name=João+Martins&background=2563eb&color=fff&size=200",
+    "proficiencias": ["Java", "Spring Boot", "Microservices", "Docker", "Kubernetes"],
+    "createdAt": { "$date": "2025-01-10T08:00:00.000Z" },
+    "updatedAt": { "$date": "2025-01-10T08:00:00.000Z" }
+  },
+  {
+    "cpf": "45678901234",
+    "nome": "Profa. Maria Oliveira",
+    "email": "maria.oliveira@infoeste.edu.br",
+    "senha": "senha123",
+    "nivel": "professor",
+    "foto": "https://ui-avatars.com/api/?name=Maria+Oliveira&background=2563eb&color=fff&size=200",
+    "proficiencias": ["Python", "Machine Learning", "Data Science", "TensorFlow", "PyTorch"],
+    "createdAt": { "$date": "2025-01-10T09:00:00.000Z" },
+    "updatedAt": { "$date": "2025-01-10T09:00:00.000Z" }
+  },
+  {
+    "cpf": "56789012345",
+    "nome": "Admin Sistema",
+    "email": "admin@infoeste.edu.br",
+    "senha": "admin123",
+    "nivel": "admin",
+    "foto": "https://ui-avatars.com/api/?name=Admin+Sistema&background=dc2626&color=fff&size=200",
+    "proficiencias": ["Administração", "Gestão", "Suporte"],
+    "createdAt": { "$date": "2025-01-01T00:00:00.000Z" },
+    "updatedAt": { "$date": "2025-01-01T00:00:00.000Z" }
+  }
+]

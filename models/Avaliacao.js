@@ -35,7 +35,6 @@ class Avaliacao {
     static async findByCourse(cursoId, incluirOcultas = true) {
         const filtro = { cursoId: cursoId };
         
-        // Se não deve incluir ocultas, filtrar apenas visíveis
         if (!incluirOcultas) {
             filtro.oculta = false;
         }

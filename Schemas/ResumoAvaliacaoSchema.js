@@ -6,7 +6,7 @@ const ResumoAvaliacaoSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Curso',
             required: true,
-            unique: true // Um resumo por curso
+            unique: true
         },
         resumoIA: {
             type: String,

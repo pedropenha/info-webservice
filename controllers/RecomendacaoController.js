@@ -1,4 +1,4 @@
-// controllers/RecomendacaoController.js
+
 import CursoModel from "../Schemas/CursoSchema.js";
 import UserModel from "../Schemas/UserSchema.js";
 import GeminiController from "./GeminiController.js";
@@ -39,7 +39,7 @@ class RecomendacaoController {
             const cursosDisponiveis = await CursoModel.find({
                 status: 'Ativo',
                 concluido: false,
-                dataInicio: { $gte: hoje }  // Apenas cursos que ainda vão iniciar
+                dataInicio: { $gte: hoje } 
             })
                 .select('_id nome proficiencias descricao publico preRequisitos') 
                 .limit(50)

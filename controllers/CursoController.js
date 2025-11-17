@@ -1,6 +1,7 @@
 import CursoModel from "../Schemas/CursoSchema.js";  
 import InscricaoModel from "../Schemas/InscricaoSchema.js";
 import UserController from "./UserController.js";
+import Curso from '../Models/Curso.js';
 import mongoose from 'mongoose';
 class CursoController {
 
@@ -60,7 +61,7 @@ class CursoController {
             } else if (status !== '') {
                 query.status = 'Ativo';
             }
-            // If status === '', don't add any status filter (get all courses)
+           
 
             if (proficiencias) {
                 const tagsRecebidas = proficiencias.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
@@ -103,7 +104,7 @@ class CursoController {
                 .populate('instrutores', 'nome email foto nivel')
                 .lean();
             
-            console.log('Curso populado:', JSON.stringify(cursoPopulado, null, 2));
+            
             
             if (!cursoPopulado) {
                 return res.status(404).json({ message: "Curso não encontrado." });
@@ -272,9 +273,7 @@ class CursoController {
                 await CursoController.adicionarProficienciasAosAlunos(curso._id, curso.proficiencias);
             }
             
-            if (cursosExpirados.length > 0) {
-                console.log(`${cursosExpirados.length} curso(s) marcado(s) como concluído(s) automaticamente`);
-            }
+            
         } catch (error) {
             console.error('Erro ao verificar cursos expirados:', error);
         }
@@ -291,7 +290,7 @@ class CursoController {
                 status: 'Inscrito' 
             });
 
-            console.log(`Adicionando proficiências [${proficiencias.join(', ')}] a ${inscricoes.length} aluno(s)`);
+            
 
             for (const inscricao of inscricoes) {
                 await UserController.adicionarProficiencias(inscricao.usuarioId, proficiencias);
@@ -302,7 +301,7 @@ class CursoController {
                 );
             }
             
-            console.log(`${inscricoes.length} inscrição(ões) marcada(s) como 'Concluido'`);
+            
         } catch (error) {
             console.error('Erro ao adicionar proficiências aos alunos:', error);
         }

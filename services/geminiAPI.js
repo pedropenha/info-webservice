@@ -52,7 +52,7 @@ async function gerarResumoAvaliacoes(avaliacoes) {
     }
 
     try {
-        // Preparar texto com todas as avaliações
+       
         const textoAvaliacoes = avaliacoes.map((av, index) => {
             return `Avaliação ${index + 1}:\n- Nota: ${av.nota}/5\n- Comentário: ${av.mensagem || 'Sem comentário'}\n`;
         }).join('\n');
@@ -75,7 +75,7 @@ Gere APENAS o texto do resumo, sem formatação JSON, sem aspas, sem código.`;
 
         let resumo = response.text.trim();
         
-        // Remover marcadores de código se existirem
+       
         if (resumo.startsWith("```")) {
             resumo = resumo.replace(/```[a-z]*\n?/g, '').trim();
         }
