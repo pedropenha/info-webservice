@@ -158,7 +158,6 @@ Se não houver pré-requisitos, retorne "Nenhum".
                 return;
             }
 
-            // Montar texto com as avaliações
             const textoAvaliacoes = avaliacoes
                 .filter(av => !av.oculta)
                 .map((av, index) => `Avaliação ${index + 1} (${av.nota} estrelas): ${av.mensagem}`)
@@ -182,7 +181,7 @@ Se não houver pré-requisitos, retorne "Nenhum".
     
     static async gerarRecomendacoesCursoAux({ proficiencias, nivel, cursosDisponiveis, cursosInscritosIds }){
             try {
-                // Validação
+              
                 if (!proficiencias || !cursosDisponiveis || !cursosInscritosIds) {
                     throw new Error("Dados de entrada para a IA incompletos.");
                 }
@@ -238,7 +237,7 @@ Se não houver pré-requisitos, retorne "Nenhum".
 
 
     static async gerarRecomendacoesCurso(req, res){
-        // Chama a função auxiliar
+        
         const body = req.body;
         const response = await this.gerarRecomendacoesCursoAux(body);
         

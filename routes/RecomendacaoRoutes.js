@@ -1,4 +1,4 @@
-// routes/RecomendacaoRoutes.js
+
 import express from "express";
 import RecomendacaoController from '../controllers/RecomendacaoController.js';
 

@@ -11,7 +11,6 @@ class Avaliacao {
         this.oculta = oculta;
     }
 
-    // CREATE
     async save() {
         const novaAvaliacao = new AvaliacaoModel({
             usuarioId: this.usuarioId,
@@ -24,7 +23,7 @@ class Avaliacao {
         return await novaAvaliacao.save();
     }
 
-    // READ: Buscar avaliação por usuário e curso
+    
     static async findByUserAndCourse(usuarioId, cursoId) {
         return await AvaliacaoModel.findOne({ 
             usuarioId: usuarioId, 
@@ -32,7 +31,7 @@ class Avaliacao {
         });
     }
 
-    // READ: Buscar todas as avaliações de um curso
+    
     static async findByCourse(cursoId) {
         return await AvaliacaoModel.find({ cursoId: cursoId })
             .populate('usuarioId', 'nome foto')
@@ -40,7 +39,7 @@ class Avaliacao {
             .lean();
     }
 
-    // READ: Buscar média de avaliações de um curso
+    
     static async getMediaByCourse(cursoId) {
         const result = await AvaliacaoModel.aggregate([
             { $match: { cursoId: new mongoose.Types.ObjectId(cursoId), oculta: false } },
@@ -61,7 +60,7 @@ class Avaliacao {
         };
     }
 
-    // UPDATE: Ocultar/mostrar avaliação
+    
     static async toggleVisibility(id, oculta) {
         return await AvaliacaoModel.findByIdAndUpdate(
             id,
@@ -70,7 +69,7 @@ class Avaliacao {
         );
     }
 
-    // DELETE: Remover avaliação (se necessário)
+    
     static async delete(id) {
         return await AvaliacaoModel.findByIdAndDelete(id);
     }

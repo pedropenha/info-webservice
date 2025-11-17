@@ -7,7 +7,6 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function callGemini(prompt){
     
-    // Verificação de segurança
     if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
         console.error("ERRO: O prompt enviado ao Gemini está vazio, nulo ou inválido.");
         throw new Error("Prompt inválido: Conteúdo para a IA não pode ser vazio.");
@@ -89,5 +88,4 @@ Gere APENAS o texto do resumo, sem formatação JSON, sem aspas, sem código.`;
     }
 }
 
-export default callGemini;
-export { gerarResumoAvaliacoes };
+export { gerarResumoAvaliacoes, callGemini };

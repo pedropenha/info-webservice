@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import CursoModel from "../Schemas/CursoSchema.js";  // Ajuste conforme necessário
+import CursoModel from "../Schemas/CursoSchema.js";
 
 class Curso {
     constructor(nome, descricao, conteudo, instrutores, preRequisitos, local, publico, minimoVagas, maximoVagas, horario, faixaEtaria, proeficiencias, dataInicio, dataTermino, id = null) {
@@ -20,14 +20,13 @@ class Curso {
         this.dataTermino = dataTermino;
     }
 
-    // Criar novo curso
     async save() {
         const novoCurso = new CursoModel(this);
         await novoCurso.save();
         return novoCurso;
     }
 
-    // Encontrar todos os cursos
+    
     static async findAll(query = {}, page = 1, limit = 10) {
         try {
             const skip = (page - 1) * limit;
@@ -38,18 +37,18 @@ class Curso {
         }
     }
 
-    // Buscar curso por ID
+    
     static async findById(id) {
         return await CursoModel.findById(id).lean();
     }
 
-    // Atualizar curso
+    
     async update() {
         if (!this.id) throw new Error("ID do curso é necessário para atualização.");
         return await CursoModel.findByIdAndUpdate(this.id, this, { new: true });
     }
 
-    // Deletar curso
+    
     static async delete(id) {
         return await CursoModel.findByIdAndDelete(id);
     }

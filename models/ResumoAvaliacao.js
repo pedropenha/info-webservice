@@ -45,7 +45,6 @@ class ResumoAvaliacao {
             ultimaAtualizacao: new Date()
         };
 
-        // Usa upsert para criar ou atualizar
         const resumo = await ResumoAvaliacaoModel.findOneAndUpdate(
             { cursoId: this.#cursoId },
             resumoData,

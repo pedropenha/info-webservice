@@ -19,25 +19,20 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
             return { status: true, mensagem: "Pré-requisitos atendidos." };
         }
         
-        // Processamento e Normalização para Requisitos Reais
         const requisitosNormalizadosSet = new Set(
-            (cursoPreRequisitos || '') // Usa o input original
+            (cursoPreRequisitos || '') 
                 .split(',')
                 .map(req => InscricaoController.normalizarProficiencia(req)) 
                 .filter(r => r.length > 0 && r !== 'nenhum') 
         );
 
-        // Se após a filtragem não houver mais requisitos
         if (requisitosNormalizadosSet.size === 0) {
             return { status: true, mensagem: "Pré-requisitos atendidos." };
         }
 
-        // Normaliza as proficiências do usuário
         const usuarioSkillsNormalizadas = new Set(
             usuarioProficiencias.map(skill => InscricaoController.normalizarProficiencia(skill))
         );
-
-        // Verificação de Requisitos Faltantes
         const requisitosFaltando = [];
         
         for (const requisito of requisitosNormalizadosSet) {
@@ -56,7 +51,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         return { status: true, mensagem: "Pré-requisitos atendidos." };
     }
 
-    // POST /api/inscricoes
     static async criarInscricao(req, res) {
         try {
             const { usuarioId, cursoId, usuarioProficiencias } = req.body;
@@ -70,7 +64,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 return res.status(404).json({ message: 'Curso não encontrado.' });
             }
 
-            // Validar se o curso está concluído
             if (curso.concluido) {
                 return res.status(400).json({ 
                     message: 'Este curso já foi concluído. Inscrições não são mais aceitas.',
@@ -78,7 +71,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 });
             }
 
-            // Validar se as inscrições estão encerradas (data de início é hoje ou passou)
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             
@@ -100,23 +92,12 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 });
             }
 
-            // REMOVIDO: Validação de pré-requisitos - alunos podem se inscrever mesmo sem as proficiências necessárias
-            // As proficiências serão adicionadas ao perfil do aluno ao concluir o curso
-            // const checagem = await InscricaoController.checarPreRequisitos(curso.preRequisitos, usuarioProficiencias);
-            // if (!checagem.status) {
-            //     return res.status(400).json({ 
-            //         message: `Falha nos pré-requisitos: ${checagem.mensagem}.`,
-            //         status: 'PreRequisitoFaltando' 
-            //     });
-            // }
-
             const maxVagas = parseInt(curso.maximoVagas);
             const vagasOcupadas = await InscricaoModel.countDocuments({ cursoId: cursoId, status: 'Inscrito' });
 
             const vagasDisponiveis = maxVagas - vagasOcupadas;
             let novoStatus = vagasDisponiveis > 0 ? 'Inscrito' : 'Fila de Espera';
 
-            // Criar a inscrição
             const novaInscricao = new Inscricao(usuarioId, cursoId, novoStatus);
             await novaInscricao.save();
             
@@ -142,16 +123,12 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         try {
             const { cursoId, usuarioId } = req.params;
             
-            // Buscar o curso
             const curso = await Curso.findById(cursoId);
             if (!curso) return res.status(404).json({ message: 'Curso não encontrado.' });
 
             const maxVagas = parseInt(curso.maximoVagas);
-
-            // Contagem de vagas ocupadas
             const vagasOcupadas = await InscricaoModel.countDocuments({ cursoId: cursoId, status: 'Inscrito' });
 
-            // Buscar o status da inscrição do usuário
             const statusUsuario = await Inscricao.findByUserAndCourse(usuarioId, cursoId);
             
             res.json({
@@ -180,8 +157,7 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
             if (!inscricaoDeletada) {
                 return res.status(404).json({ message: "Inscrição não encontrada." });
             }
-            
-            // (Opcional: Adicionar lógica para notificar o próximo da fila de espera, se houver)
+        
 
             res.status(200).json({ message: "Inscrição cancelada com sucesso." });
         } catch (error) {
@@ -190,7 +166,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         }
     }
 
-    // GET /api/inscricoes/usuario/:usuarioId - Buscar inscrições do usuário
     static async buscarInscricoesUsuario(req, res) {
         try {
             const { usuarioId } = req.params;
@@ -204,7 +179,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
                 .sort({ dataInscricao: -1 })
                 .lean();
 
-            // Adicionar status do curso (em andamento, concluído, vai iniciar)
             const hoje = new Date();
             const inscricoesComStatus = inscricoes.map(inscricao => {
                 if (!inscricao.cursoId) return inscricao;
@@ -238,7 +212,6 @@ static async checarPreRequisitos(cursoPreRequisitos, usuarioProficiencias) {
         }
     }
 
-    // PATCH /api/inscricoes/:id/concluir - Marcar curso como concluído
     static async concluirCurso(req, res) {
         try {
             const { id } = req.params;

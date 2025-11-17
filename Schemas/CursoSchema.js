@@ -1,4 +1,3 @@
-// Schemas/CursoSchema.js
 import mongoose from 'mongoose';
 
 const CursoSchema = new mongoose.Schema(
@@ -81,7 +80,6 @@ const CursoSchema = new mongoose.Schema(
     }
 );
 
-// Validação: pelo menos 1 instrutor
 CursoSchema.path('instrutores').validate(function(value) {
     return value && value.length > 0;
 }, 'Pelo menos um instrutor é obrigatório.');

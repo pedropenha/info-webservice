@@ -1,21 +1,16 @@
 import Avaliacao from "../models/Avaliacao.js";
 import Inscricao from "../models/Inscricao.js";
 import ResumoAvaliacao from "../models/ResumoAvaliacao.js";
-import AvaliacaoModel from "../Schemas/AvaliacaoSchema.js";
 import { gerarResumoAvaliacoes } from "../services/geminiAPI.js";
 import mongoose from 'mongoose';
 
 class AvaliacaoController {
     
-    // POST /api/avaliacoes - Criar avaliação
     static async criarAvaliacao(req, res) {
         try {
             const { usuarioId, cursoId, nota, mensagem, comentario } = req.body;
-
-            // Aceita tanto 'mensagem' quanto 'comentario' para compatibilidade
             const textoAvaliacao = mensagem || comentario;
 
-            // Validações
             if (!usuarioId || !cursoId || !nota) {
                 return res.status(400).json({ message: 'Campos obrigatórios: usuarioId, cursoId e nota.' });
             }
@@ -28,7 +23,6 @@ class AvaliacaoController {
                 return res.status(400).json({ message: 'A nota deve estar entre 1 e 5.' });
             }
 
-            // Verificar se o usuário concluiu o curso
             const inscricao = await Inscricao.findByUserAndCourse(usuarioId, cursoId);
             
             if (!inscricao) {
@@ -43,7 +37,6 @@ class AvaliacaoController {
                 });
             }
 
-            // Verificar se já avaliou
             const avaliacaoExistente = await Avaliacao.findByUserAndCourse(usuarioId, cursoId);
             if (avaliacaoExistente) {
                 return res.status(409).json({ 
@@ -51,16 +44,13 @@ class AvaliacaoController {
                 });
             }
 
-            // Criar avaliação (usa textoAvaliacao que pode ser mensagem ou comentario)
             const novaAvaliacao = new Avaliacao(usuarioId, cursoId, nota, textoAvaliacao || '');
             await novaAvaliacao.save();
 
-            // Gerar resumo automaticamente após criar avaliação
             try {
                 await AvaliacaoController.gerarResumoIA(cursoId);
             } catch (error) {
                 console.error('Erro ao gerar resumo de avaliações:', error);
-                // Não bloqueia a criação da avaliação se falhar a geração do resumo
             }
 
             res.status(201).json({ 
@@ -74,7 +64,6 @@ class AvaliacaoController {
         }
     }
 
-    // GET /api/avaliacoes/curso/:cursoId - Buscar avaliações de um curso
     static async buscarAvaliacoesCurso(req, res) {
         try {
             const { cursoId } = req.params;
@@ -83,10 +72,8 @@ class AvaliacaoController {
                 return res.status(400).json({ message: 'ID do curso inválido.' });
             }
 
-            // Buscar resumo em cache
             const resumoCache = await ResumoAvaliacao.findByCurso(cursoId);
 
-            // Buscar avaliações individuais
             const avaliacoes = await Avaliacao.findByCourse(cursoId);
             const { media, total } = await Avaliacao.getMediaByCourse(cursoId);
 
@@ -109,7 +96,6 @@ class AvaliacaoController {
         }
     }
 
-    // GET /api/avaliacoes/verificar/:cursoId/:usuarioId - Verificar se usuário já avaliou
     static async verificarAvaliacao(req, res) {
         try {
             const { cursoId, usuarioId } = req.params;
@@ -131,7 +117,6 @@ class AvaliacaoController {
         }
     }
 
-    // PATCH /api/avaliacoes/:id/ocultar - Ocultar/mostrar avaliação (admin/professor)
     static async toggleOcultarAvaliacao(req, res) {
         try {
             const { id } = req.params;
@@ -160,21 +145,16 @@ class AvaliacaoController {
 
     static async gerarResumoIA(cursoId) {
         try {
-            // Buscar todas as avaliações do curso (não ocultas)
             const avaliacoes = await Avaliacao.findByCourse(cursoId);
 
             if (!avaliacoes || avaliacoes.length === 0) {
-                // Se não há avaliações, remove o resumo se existir
                 await ResumoAvaliacao.delete(cursoId);
                 return;
             }
 
-            // Calcular estatísticas
             const totalAvaliacoes = avaliacoes.length;
             const somaNotas = avaliacoes.reduce((sum, av) => sum + av.nota, 0);
             const mediaNotas = somaNotas / totalAvaliacoes;
-
-            // Calcular distribuição de notas
             const distribuicaoNotas = {
                 nota1: avaliacoes.filter(av => av.nota === 1).length,
                 nota2: avaliacoes.filter(av => av.nota === 2).length,
@@ -183,10 +163,8 @@ class AvaliacaoController {
                 nota5: avaliacoes.filter(av => av.nota === 5).length
             };
 
-            // Gerar resumo usando IA
             const resumoIA = await gerarResumoAvaliacoes(avaliacoes);
 
-            // Salvar ou atualizar resumo
             const resumo = new ResumoAvaliacao(
                 cursoId,
                 resumoIA,

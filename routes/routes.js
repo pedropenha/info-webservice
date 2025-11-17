@@ -9,13 +9,11 @@ import recomendacaoRoutes from './RecomendacaoRoutes.js';
 
 const router = express.Router();
 
-//router.get('/', User.find);
 router.use('/api/cursos', cursoRoutes);
 router.use('/api/auth', authRoutes);
 router.use('/api/users', userRoutes);
 router.use('/api/inscricoes', inscricaoRoutes); 
 router.use('/api/gemini', GeminiRoutes);
 router.use('/api/avaliacoes', avaliacaoRoutes);
-//router.post('/', User.save);
 router.use('/api/recomendacoes', recomendacaoRoutes);
 export default router;

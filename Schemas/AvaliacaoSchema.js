@@ -32,7 +32,6 @@ const AvaliacaoSchema = new mongoose.Schema(
     }
 );
 
-// Garante que um usuário só pode avaliar uma vez por curso
 AvaliacaoSchema.index({ usuarioId: 1, cursoId: 1 }, { unique: true });
 
 const AvaliacaoModel = mongoose.model('Avaliacao', AvaliacaoSchema);

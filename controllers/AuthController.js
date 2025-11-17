@@ -1,19 +1,16 @@
 import User from "../models/User.js";
 
 class AuthController {
-    // Cadastro de novo usuário (sempre com nível 'user')
     static async cadastro(req, res) {
         try {
             const { cpf, nome, email, senha } = req.body;
 
-            // Validações
             if (!cpf || !nome || !email || !senha) {
                 return res.status(400).json({ 
                     message: "Todos os campos são obrigatórios" 
                 });
             }
 
-            // Verificar se o usuário já existe
             const userExists = await User.findByCpf(cpf);
 
             if (userExists) {
@@ -22,7 +19,6 @@ class AuthController {
                 });
             }
 
-            // Criar novo usuário com nível 'user' por padrão
             const newUser = new User(nome, senha, email, cpf, 'user');
             await newUser.save();
 
@@ -43,19 +39,16 @@ class AuthController {
         }
     }
 
-    // Login de usuário
     static async login(req, res) {
         try {
             const { cpf, senha } = req.body;
 
-            // Validações
             if (!cpf || !senha) {
                 return res.status(400).json({ 
                     message: "CPF e senha são obrigatórios" 
                 });
             }
 
-            // Buscar usuário pelo CPF
             const user = await User.findByCpf(cpf);
 
             if (!user) {
@@ -64,14 +57,12 @@ class AuthController {
                 });
             }
 
-            // Verificar senha (comparação direta - em produção use bcrypt)
             if (user.senha !== senha) {
                 return res.status(401).json({ 
                     message: "CPF ou senha incorretos" 
                 });
             }
 
-            // Login bem-sucedido
             res.status(200).json({ 
                 message: "Login realizado com sucesso",
                 user: {

@@ -22,7 +22,6 @@ const InscricaoSchema = mongoose.Schema({
     }
 },
 { 
-    // Garante que um usuário só pode se inscrever uma vez por curso
     uniqueKeys: [['usuarioId', 'cursoId']] 
 });
 
